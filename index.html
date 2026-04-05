@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🏏 Cricket Scorer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
+  :root {
+    --bg: #0a0c0f;
+    --surface: #13161b;
+    --surface2: #1c2028;
+    --border: #2a2f3a;
+    --green: #00e676;
+    --yellow: #ffd600;
+    --red: #ff3d57;
+    --blue: #2196f3;
+    --orange: #ff6d00;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --strike-bg: rgba(0,230,118,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Barlow Condensed', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    font-size: 16px;
+  }
+
+  /* ── SETUP SCREEN ── */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  #setup-screen {
+    padding: 0 0 40px;
+    min-height: 100vh;
+  }
+
+  .setup-header {
+    background: linear-gradient(135deg, #00e676 0%, #00bcd4 100%);
+    padding: 24px 20px 20px;
+    text-align: center;
+  }
+  .setup-header h1 {
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: #0a0c0f;
+    letter-spacing: 0.03em;
+    line-height: 1;
+  }
+  .setup-header p {
+    color: rgba(10,12,15,0.7);
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 4px;
+  }
+
+  .setup-section {
+    padding: 20px 16px 0;
+  }
+  .setup-section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .field-row { margin-bottom: 12px; }
+  .field-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 5px;
+  }
+  input[type="text"], input[type="number"], input[type="date"], select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 12px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  input:focus, select:focus { border-color: var(--green); }
+  select option { background: var(--surface2); }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .match-type-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .type-btn {
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    padding: 12px 4px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .type-btn.selected {
+    background: rgba(0,230,118,0.12);
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  #custom-overs-field { display: none; margin-top: 10px; }
+
+  .start-btn {
+    display: block;
+    width: calc(100% - 32px);
+    margin: 24px 16px 0;
+    background: linear-gradient(135deg, #00e676, #00bcd4);
+    border: none;
+    border-radius: 12px;
+    color: #0a0c0f;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 900;
+    padding: 18px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition: transform 0.1s, opacity 0.1s;
+  }
+  .start-btn:active { transform: scale(0.97); opacity: 0.9; }
+
+  /* ── SCORING SCREEN ── */
+  #score-screen { min-height: 100vh; display: flex; flex-direction: column; }
+
+  .scoreboard {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 14px 8px;
+  }
+
+  .score-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .score-main {
+    font-size: 2.8rem;
+    font-weight: 900;
+    color: var(--text);
+    line-height: 1;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .score-meta {
+    text-align: right;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .score-meta .rr { color: var(--yellow); font-size: 1rem; }
+  .innings-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .overs-bar-wrap {
+    background: var(--bg);
+    border-radius: 4px;
+    height: 5px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+  .overs-bar { height: 100%; background: var(--green); border-radius: 4px; transition: width 0.3s; }
+
+  .target-banner {
+    display: none;
+    background: rgba(255,214,0,0.1);
+    border: 1px solid rgba(255,214,0,0.3);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--yellow);
+    text-align: center;
+    margin-top: 6px;
+  }
+
+  /* Batsmen */
+  .batsmen-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    margin: 0;
+  }
+  .batsman-card {
+    background: var(--surface);
+    padding: 10px 12px;
+    position: relative;
+    transition: background 0.2s;
+  }
+  .batsman-card.on-strike { background: var(--strike-bg); }
+  .bat-name {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  .bat-runs {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.1;
+  }
+  .bat-stats {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .bat-stats span { color: var(--yellow); }
+  .strike-indicator {
+    position: absolute;
+    top: 8px; right: 8px;
+    width: 8px; height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    display: none;
+  }
+  .on-strike .strike-indicator { display: block; }
+
+  /* Current over balls */
+  .over-strip {
+    background: var(--bg);
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+  }
+  .over-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .over-balls { display: flex; gap: 5px; flex-wrap: nowrap; }
+  .ball-chip {
+    min-width: 26px; height: 26px;
+    border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.78rem;
+    font-weight: 800;
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .ball-chip.b4 { background: rgba(33,150,243,0.2); border-color: var(--blue); color: var(--blue); }
+  .ball-chip.b6 { background: rgba(255,109,0,0.2); border-color: var(--orange); color: var(--orange); }
+  .ball-chip.W { background: rgba(255,61,87,0.18); border-color: var(--red); color: var(--red); }
+  .ball-chip.Wd { background: rgba(255,214,0,0.15); border-color: var(--yellow); color: var(--yellow); }
+  .ball-chip.Nb { background: rgba(255,109,0,0.15); border-color: var(--orange); color: var(--orange); }
+
+  /* Bowler bar */
+  .bowler-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 7px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .bowler-name { font-size: 0.9rem; font-weight: 800; color: var(--text); }
+  .bowler-figures { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--muted); }
+
+  /* Buttons grid */
+  .btn-area { padding: 10px 10px 0; flex: 1; }
+
+  .run-btns {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .run-btn {
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 900;
+    height: 58px;
+    cursor: pointer;
+    transition: all 0.1s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .run-btn:active { transform: scale(0.92); }
+  .run-btn[data-runs="4"] { border-color: var(--blue); color: var(--blue); }
+  .run-btn[data-runs="6"] { border-color: var(--orange); color: var(--orange); }
+
+  .extra-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .action-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .ctrl-btn {
+    border: none;
+    border-radius: 10px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    padding: 14px 6px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    transition: all 0.1s;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+  }
+  .ctrl-btn:active { transform: scale(0.94); }
+  .btn-wide { background: rgba(255,214,0,0.12); border: 2px solid rgba(255,214,0,0.4); color: var(--yellow); }
+  .btn-noball { background: rgba(255,109,0,0.12); border: 2px solid rgba(255,109,0,0.4); color: var(--orange); }
+  .btn-dead { background: var(--surface2); border: 2px solid var(--border); color: var(--muted); }
+  .btn-wicket { background: rgba(255,61,87,0.12); border: 2px solid rgba(255,61,87,0.4); color: var(--red); }
+  .btn-bowler { background: rgba(33,150,243,0.12); border: 2px solid rgba(33,150,243,0.4); color: var(--blue); }
+  .btn-sub { background: rgba(0,230,118,0.1); border: 2px solid rgba(0,230,118,0.3); color: var(--green); }
+
+  .bottom-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .btn-undo { background: var(--surface2); border: 2px solid var(--border); color: var(--muted); }
+  .btn-end-innings { background: rgba(255,214,0,0.12); border: 2px solid rgba(255,214,0,0.4); color: var(--yellow); }
+  .btn-end-match { background: rgba(255,61,87,0.12); border: 2px solid rgba(255,61,87,0.4); color: var(--red); }
+
+  .overs-alert {
+    display: none;
+    background: rgba(255,214,0,0.15);
+    border: 1.5px solid var(--yellow);
+    border-radius: 8px;
+    color: var(--yellow);
+    font-size: 1rem;
+    font-weight: 800;
+    text-align: center;
+    padding: 10px;
+    margin-bottom: 8px;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── MODALS ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 400px;
+    overflow: hidden;
+  }
+  .modal-header {
+    background: var(--surface2);
+    padding: 16px 20px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-body { padding: 16px 20px; }
+  .modal-footer {
+    padding: 12px 20px 16px;
+    display: flex;
+    gap: 10px;
+  }
+  .modal-btn {
+    flex: 1;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
+    padding: 14px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: opacity 0.1s;
+  }
+  .modal-btn:active { opacity: 0.8; }
+  .modal-btn.primary { background: var(--green); color: #0a0c0f; }
+  .modal-btn.danger { background: var(--red); color: #fff; }
+  .modal-btn.secondary { background: var(--surface2); color: var(--text); border: 1.5px solid var(--border); }
+
+  .dismiss-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .dismiss-option {
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 12px 6px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .dismiss-option.selected { background: rgba(255,61,87,0.15); border-color: var(--red); color: var(--red); }
+
+  .position-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pos-btn {
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 14px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .pos-btn:active { transform: scale(0.95); }
+
+  /* Bowler list */
+  .bowler-list { max-height: 220px; overflow-y: auto; }
+  .bowler-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .bowler-item:last-child { border-bottom: none; }
+  .bowler-item-name { font-size: 1rem; font-weight: 800; }
+  .bowler-item-figures { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--muted); }
+  .bowler-item.current .bowler-item-name { color: var(--blue); }
+
+  /* Sub list */
+  .sub-list { display: flex; flex-direction: column; gap: 8px; }
+  .sub-option {
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .sub-option.selected { border-color: var(--green); background: rgba(0,230,118,0.08); }
+  .sub-option-name { font-size: 1rem; font-weight: 800; }
+  .sub-option-stats { font-size: 0.8rem; color: var(--muted); }
+
+  /* ── SUMMARY SCREEN ── */
+  #summary-screen {
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+  .summary-header {
+    background: linear-gradient(135deg, #1a2a1a 0%, #0a1a2a 100%);
+    border-bottom: 2px solid var(--green);
+    padding: 20px 16px;
+    text-align: center;
+  }
+  .summary-header h2 {
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: var(--green);
+    letter-spacing: 0.05em;
+  }
+  .summary-header .match-result {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--yellow);
+    margin-top: 4px;
+  }
+
+  .innings-summary { padding: 16px 14px 0; }
+  .innings-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .score-headline {
+    font-size: 2rem;
+    font-weight: 900;
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 12px;
+  }
+
+  .stat-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+  .stat-table th {
+    text-align: left;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 6px 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-table th:not(:first-child) { text-align: right; }
+  .stat-table td {
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 8px 4px;
+    border-bottom: 1px solid rgba(42,47,58,0.5);
+  }
+  .stat-table td:not(:first-child) { text-align: right; font-family: 'JetBrains Mono', monospace; }
+  .stat-table .dismissed { color: var(--muted); }
+  .stat-table .not-out { color: var(--green); }
+  .stat-table .not-out::after { content: '*'; }
+
+  .new-match-btn {
+    display: block;
+    width: calc(100% - 32px);
+    margin: 20px 16px 0;
+    background: linear-gradient(135deg, #00e676, #00bcd4);
+    border: none;
+    border-radius: 12px;
+    color: #0a0c0f;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 900;
+    padding: 16px;
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+  .end-match-early-btn {
+    display: block;
+    width: calc(100% - 32px);
+    margin: 10px 16px 0;
+    background: rgba(255,61,87,0.12);
+    border: 2px solid rgba(255,61,87,0.4);
+    border-radius: 12px;
+    color: var(--red);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 900;
+    padding: 14px;
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ SETUP SCREEN ═══════════════ -->
+<div id="setup-screen" class="screen active">
+  <div class="setup-header">
+    <h1>🏏 CRICKET SCORER</h1>
+    <p>Live Match Tracker</p>
+  </div>
+
+  <div class="setup-section">
+    <div class="setup-section-title">Match Info</div>
+    <div class="two-col">
+      <div class="field-row">
+        <div class="field-label">Batting Team</div>
+        <input type="text" id="team-bat" placeholder="Team A">
+      </div>
+      <div class="field-row">
+        <div class="field-label">Bowling Team</div>
+        <input type="text" id="team-bowl" placeholder="Team B">
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="field-row">
+        <div class="field-label">Players per Team</div>
+        <input type="number" id="team-size" placeholder="e.g. 6" min="2" max="11" value="">
+      </div>
+      <div class="field-row">
+        <div class="field-label">Match Date</div>
+        <input type="date" id="match-date">
+      </div>
+    </div>
+  </div>
+
+  <div class="setup-section">
+    <div class="setup-section-title">Match Format</div>
+    <div class="match-type-grid">
+      <button class="type-btn" data-overs="5">5 Ov</button>
+      <button class="type-btn selected" data-overs="20">T20</button>
+      <button class="type-btn" data-overs="50">ODI</button>
+      <button class="type-btn" data-overs="0">Custom</button>
+    </div>
+    <div id="custom-overs-field">
+      <div class="field-label">Number of Overs</div>
+      <input type="number" id="custom-overs-input" placeholder="e.g. 10" min="1" max="999">
+    </div>
+  </div>
+
+  <div class="setup-section">
+    <div class="setup-section-title">Opening Batsmen</div>
+    <div class="two-col">
+      <div class="field-row">
+        <div class="field-label">Batsman 1 (Striker)</div>
+        <input type="text" id="bat1-name" placeholder="Name">
+      </div>
+      <div class="field-row">
+        <div class="field-label">Batsman 2</div>
+        <input type="text" id="bat2-name" placeholder="Name">
+      </div>
+    </div>
+  </div>
+
+  <div class="setup-section">
+    <div class="setup-section-title">Opening Bowler</div>
+    <div class="field-row">
+      <div class="field-label">Bowler Name</div>
+      <input type="text" id="bowler1-name" placeholder="Name">
+    </div>
+  </div>
+
+  <button class="start-btn" onclick="startMatch()">⚡ START MATCH</button>
+</div>
+
+<!-- ═══════════════ SCORING SCREEN ═══════════════ -->
+<div id="score-screen" class="screen">
+  <!-- Scoreboard -->
+  <div class="scoreboard">
+    <div class="score-top">
+      <div>
+        <div class="innings-label" id="innings-label">1st Innings — Team A</div>
+        <div class="score-main" id="score-main">0/0</div>
+      </div>
+      <div class="score-meta">
+        <div id="overs-display">0.0 / 20</div>
+        <div class="rr" id="rr-display">RR: 0.00</div>
+      </div>
+    </div>
+    <div class="overs-bar-wrap">
+      <div class="overs-bar" id="overs-bar" style="width:0%"></div>
+    </div>
+    <div class="target-banner" id="target-banner"></div>
+  </div>
+
+  <!-- Batsmen -->
+  <div class="batsmen-row">
+    <div class="batsman-card on-strike" id="bat-card-0">
+      <div class="strike-indicator"></div>
+      <div class="bat-name" id="bat-name-0">—</div>
+      <div class="bat-runs" id="bat-runs-0">0</div>
+      <div class="bat-stats">(<span id="bat-balls-0">0</span>b) SR: <span id="bat-sr-0">0.00</span></div>
+    </div>
+    <div class="batsman-card" id="bat-card-1">
+      <div class="strike-indicator"></div>
+      <div class="bat-name" id="bat-name-1">—</div>
+      <div class="bat-runs" id="bat-runs-1">0</div>
+      <div class="bat-stats">(<span id="bat-balls-1">0</span>b) SR: <span id="bat-sr-1">0.00</span></div>
+    </div>
+  </div>
+
+  <!-- Current over strip -->
+  <div class="over-strip">
+    <div class="over-label" id="over-strip-label">Over 1:</div>
+    <div class="over-balls" id="over-balls"></div>
+  </div>
+
+  <!-- Bowler bar -->
+  <div class="bowler-bar">
+    <div>
+      <div class="bowler-name" id="bowler-name-bar">—</div>
+      <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;" id="bowler-over-label"></div>
+    </div>
+    <div class="bowler-figures" id="bowler-figures-bar">0-0-0-0</div>
+  </div>
+
+  <!-- Scoring area -->
+  <div class="btn-area">
+    <div class="overs-alert" id="overs-alert">⚠ OVERS COMPLETED — PLEASE END INNINGS</div>
+
+    <div class="run-btns">
+      <button class="run-btn" data-runs="0" onclick="scoreRuns(0)">0</button>
+      <button class="run-btn" data-runs="1" onclick="scoreRuns(1)">1</button>
+      <button class="run-btn" data-runs="2" onclick="scoreRuns(2)">2</button>
+      <button class="run-btn" data-runs="3" onclick="scoreRuns(3)">3</button>
+      <button class="run-btn" data-runs="4" onclick="scoreRuns(4)">4</button>
+      <button class="run-btn" data-runs="5" onclick="scoreRuns(5)">5</button>
+      <button class="run-btn" data-runs="6" onclick="scoreRuns(6)">6</button>
+    </div>
+
+    <div class="extra-btns">
+      <button class="ctrl-btn btn-wide" onclick="scoreWide()">Wide +1</button>
+      <button class="ctrl-btn btn-noball" onclick="scoreNoball()">No Ball +1</button>
+      <button class="ctrl-btn btn-dead" onclick="scoreDead()">Dead Ball</button>
+    </div>
+
+    <div class="action-btns">
+      <button class="ctrl-btn btn-wicket" onclick="openWicketModal()">🔴 Wicket</button>
+      <button class="ctrl-btn btn-bowler" onclick="openBowlerModal()">🔄 Bowler</button>
+      <button class="ctrl-btn btn-sub" onclick="openSubModal()">↔ Sub</button>
+    </div>
+
+    <div class="bottom-btns">
+      <button class="ctrl-btn btn-undo" onclick="undoLast()">↩ Undo</button>
+      <button class="ctrl-btn btn-end-innings" onclick="endInnings()">🏁 End Innings</button>
+    </div>
+    <div style="padding: 0 0 6px;">
+      <button class="ctrl-btn btn-end-match" style="width:100%;border-radius:10px;padding:14px;" onclick="confirmEndMatch()">✕ End Match</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SUMMARY SCREEN ═══════════════ -->
+<div id="summary-screen" class="screen">
+  <div class="summary-header">
+    <h2>📊 MATCH SUMMARY</h2>
+    <div class="match-result" id="match-result-text"></div>
+  </div>
+  <div id="summary-content"></div>
+  <button class="new-match-btn" onclick="resetAll()">🏏 NEW MATCH</button>
+</div>
+
+<!-- ─────── MODALS ─────── -->
+
+<!-- Wicket Modal -->
+<div class="modal-overlay" id="wicket-modal">
+  <div class="modal">
+    <div class="modal-header" style="color:var(--red);">🔴 WICKET</div>
+    <div class="modal-body">
+      <div style="font-size:0.8rem;color:var(--muted);margin-bottom:8px;font-weight:700;text-transform:uppercase;">Dismissal Type</div>
+      <div class="dismiss-grid" id="dismiss-grid">
+        <button class="dismiss-option" onclick="selectDismissal('Bowled')">Bowled</button>
+        <button class="dismiss-option" onclick="selectDismissal('Caught')">Caught</button>
+        <button class="dismiss-option" onclick="selectDismissal('Stumped')">Stumped</button>
+        <button class="dismiss-option" onclick="selectDismissal('Run Out')">Run Out</button>
+        <button class="dismiss-option selected" onclick="selectDismissal('Hit Wicket')">Hit Wicket</button>
+      </div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-bottom:8px;font-weight:700;text-transform:uppercase;margin-top:10px;">Who got out?</div>
+      <div class="position-btns" id="wicket-batsman-btns">
+        <button class="pos-btn" onclick="confirmWicket(0)" id="wicket-bat0-btn">—</button>
+        <button class="pos-btn" onclick="confirmWicket(1)" id="wicket-bat1-btn">—</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn secondary" onclick="closeModal('wicket-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Batsman Modal -->
+<div class="modal-overlay" id="newbat-modal">
+  <div class="modal">
+    <div class="modal-header">NEW BATSMAN</div>
+    <div class="modal-body">
+      <div class="field-row" style="margin-bottom:14px;">
+        <div class="field-label">Batsman Name</div>
+        <input type="text" id="newbat-name-input" placeholder="Enter name">
+      </div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-bottom:8px;font-weight:700;text-transform:uppercase;">Takes position at</div>
+      <div class="position-btns">
+        <button class="pos-btn" onclick="confirmNewBatsman(0)" id="newbat-pos0">Striker</button>
+        <button class="pos-btn" onclick="confirmNewBatsman(1)" id="newbat-pos1">Non-Striker</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bowler Change Modal -->
+<div class="modal-overlay" id="bowler-modal">
+  <div class="modal">
+    <div class="modal-header" style="color:var(--blue);">🔄 CHANGE BOWLER</div>
+    <div class="modal-body">
+      <div class="bowler-list" id="bowler-list-existing"></div>
+      <div class="field-row" style="margin-top:14px;">
+        <div class="field-label">New Bowler Name</div>
+        <input type="text" id="new-bowler-input" placeholder="Enter name">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn secondary" onclick="closeModal('bowler-modal')">Cancel</button>
+      <button class="modal-btn primary" onclick="addNewBowler()">Add Bowler</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sub Modal -->
+<div class="modal-overlay" id="sub-modal">
+  <div class="modal">
+    <div class="modal-header" style="color:var(--green);">↔ SUBSTITUTE</div>
+    <div class="modal-body">
+      <div style="font-size:0.8rem;color:var(--muted);margin-bottom:8px;font-weight:700;text-transform:uppercase;">Swap out</div>
+      <div class="sub-list" id="sub-out-list"></div>
+      <div style="margin-top:14px;">
+        <div class="field-label">New Batsman Name</div>
+        <input type="text" id="sub-new-name" placeholder="Enter name">
+      </div>
+      <div style="font-size:0.8rem;color:var(--muted);margin:10px 0 6px;font-weight:700;text-transform:uppercase;">New player takes position</div>
+      <div class="position-btns">
+        <button class="pos-btn" id="sub-pos0" onclick="selectSubPos(0)">Striker</button>
+        <button class="pos-btn" id="sub-pos1" onclick="selectSubPos(1)">Non-Striker</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn secondary" onclick="closeModal('sub-modal')">Cancel</button>
+      <button class="modal-btn primary" onclick="confirmSub()">Confirm Sub</button>
+    </div>
+  </div>
+</div>
+
+<!-- End Innings Confirm Modal -->
+<div class="modal-overlay" id="end-innings-modal">
+  <div class="modal">
+    <div class="modal-header" style="color:var(--yellow);">🏁 END INNINGS</div>
+    <div class="modal-body">
+      <p id="end-innings-msg" style="font-size:1.05rem;font-weight:700;line-height:1.5;">Are you sure you want to end the innings?</p>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn secondary" onclick="closeModal('end-innings-modal')">Cancel</button>
+      <button class="modal-btn primary" onclick="doEndInnings()">Yes, End Innings</button>
+    </div>
+  </div>
+</div>
+
+<!-- End Match Confirm Modal -->
+<div class="modal-overlay" id="end-match-modal">
+  <div class="modal">
+    <div class="modal-header" style="color:var(--red);">✕ END MATCH</div>
+    <div class="modal-body">
+      <p style="font-size:1.05rem;font-weight:700;line-height:1.5;">End the match now and go to the summary?</p>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn secondary" onclick="closeModal('end-match-modal')">Cancel</button>
+      <button class="modal-btn danger" onclick="doEndMatch()">End Match</button>
+    </div>
+  </div>
+</div>
+
+<!-- 2nd Innings Setup Modal -->
+<div class="modal-overlay" id="innings2-modal">
+  <div class="modal">
+    <div class="modal-header" style="color:var(--green);">🏏 2ND INNINGS SETUP</div>
+    <div class="modal-body">
+      <div style="font-size:0.85rem;color:var(--yellow);font-weight:700;margin-bottom:12px;" id="target-info-modal"></div>
+      <div class="field-row">
+        <div class="field-label">Batsman 1 (Striker)</div>
+        <input type="text" id="inn2-bat1" placeholder="Name">
+      </div>
+      <div class="field-row">
+        <div class="field-label">Batsman 2</div>
+        <input type="text" id="inn2-bat2" placeholder="Name">
+      </div>
+      <div class="field-row">
+        <div class="field-label">Opening Bowler</div>
+        <input type="text" id="inn2-bowler" placeholder="Name">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn primary" onclick="startSecondInnings()">Start 2nd Innings</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────
+let state = {};
+
+function freshInningsState() {
+  return {
+    runs: 0, wickets: 0, balls: 0, // legal balls
+    batsmen: [
+      { name: '', runs: 0, balls: 0, fours: 0, sixes: 0, dismissed: false, dismissal: '', bowler: '' },
+      { name: '', runs: 0, balls: 0, fours: 0, sixes: 0, dismissed: false, dismissal: '', bowler: '' }
+    ],
+    striker: 0,
+    bowlers: [],
+    currentBowlerIdx: 0,
+    currentOverBalls: [], // visual chips per ball in current over
+    history: [] // for undo
+  };
+}
+
+function init() {
+  state = {
+    setup: {
+      teamBat: '', teamBowl: '', maxOvers: 20, date: ''
+    },
+    innings: 1,
+    inn: [freshInningsState(), null],
+    complete: false
+  };
+}
+init();
+
+// ─── SETUP ───────────────────────────────────────────────────────────────
+document.querySelectorAll('.type-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+    this.classList.add('selected');
+    const overs = parseInt(this.dataset.overs);
+    const customField = document.getElementById('custom-overs-field');
+    customField.style.display = overs === 0 ? 'block' : 'none';
+    state.setup.maxOvers = overs;
+  });
+});
+document.getElementById('match-date').value = new Date().toISOString().split('T')[0];
+
+function startMatch() {
+  const teamBat = document.getElementById('team-bat').value.trim() || 'Team A';
+  const teamBowl = document.getElementById('team-bowl').value.trim() || 'Team B';
+  const bat1 = document.getElementById('bat1-name').value.trim() || 'Batsman 1';
+  const bat2 = document.getElementById('bat2-name').value.trim() || 'Batsman 2';
+  const bowler = document.getElementById('bowler1-name').value.trim() || 'Bowler 1';
+  const selBtn = document.querySelector('.type-btn.selected');
+  let maxOvers = parseInt(selBtn ? selBtn.dataset.overs : 20);
+  if (maxOvers === 0) {
+    const custom = parseInt(document.getElementById('custom-overs-input').value);
+    maxOvers = isNaN(custom) || custom < 1 ? 999 : custom;
+  }
+
+  const teamSizeRaw = parseInt(document.getElementById('team-size').value);
+  const teamSize = isNaN(teamSizeRaw) || teamSizeRaw < 2 ? 11 : teamSizeRaw;
+  state.setup = { teamBat, teamBowl, maxOvers, teamSize, date: document.getElementById('match-date').value };
+  state.innings = 1;
+  const i = state.inn[0];
+  i.batsmen[0].name = bat1;
+  i.batsmen[1].name = bat2;
+  i.batsmen[0].dismissed = false;
+  i.batsmen[1].dismissed = false;
+  i.bowlers = [{ name: bowler, balls: 0, runs: 0, wickets: 0 }];
+  i.currentBowlerIdx = 0;
+  i.striker = 0;
+
+  showScreen('score-screen');
+  renderScoring();
+}
+
+// ─── SCORING SCREEN RENDER ────────────────────────────────────────────────
+function currentInnings() { return state.inn[state.innings - 1]; }
+
+function renderScoring() {
+  const i = currentInnings();
+  const s = state.setup;
+  const overs = ballsToOvers(i.balls);
+  const maxOv = s.maxOvers;
+
+  // Top bar
+  document.getElementById('innings-label').textContent =
+    (state.innings === 1 ? '1st' : '2nd') + ' Innings — ' + (state.innings === 1 ? s.teamBat : s.teamBowl);
+  document.getElementById('score-main').textContent = i.runs + '/' + i.wickets;
+  document.getElementById('overs-display').textContent =
+    overs + ' / ' + (maxOv === 999 ? '∞' : maxOv);
+
+  const ballsDone = i.balls;
+  const totalMaxBalls = maxOv === 999 ? 9999 : maxOv * 6;
+  document.getElementById('overs-bar').style.width =
+    maxOv === 999 ? '0%' : Math.min(100, ballsDone / totalMaxBalls * 100) + '%';
+
+  const rr = i.balls > 0 ? (i.runs / (i.balls / 6)).toFixed(2) : '0.00';
+  document.getElementById('rr-display').textContent = 'RR: ' + rr;
+
+  // Target banner
+  const banner = document.getElementById('target-banner');
+  if (state.innings === 2 && state.inn[0]) {
+    const target = state.inn[0].runs + 1;
+    const need = target - i.runs;
+    const ballsLeft = totalMaxBalls - i.balls;
+    const oversLeft = Math.floor(ballsLeft / 6) + '.' + (ballsLeft % 6);
+    if (i.runs >= state.inn[0].runs) {
+      banner.style.display = 'block';
+      banner.style.color = 'var(--green)';
+      banner.textContent = '🏆 ' + s.teamBowl + ' WON!';
+    } else if (need > 0) {
+      banner.style.display = 'block';
+      banner.style.color = 'var(--yellow)';
+      banner.textContent = 'Need ' + need + ' off ' + oversLeft + ' ov | Target: ' + target;
+    }
+  } else {
+    banner.style.display = 'none';
+  }
+
+  // Batsmen
+  for (let b = 0; b < 2; b++) {
+    const bat = i.batsmen[b];
+    const sr = bat.balls > 0 ? (bat.runs / bat.balls * 100).toFixed(2) : '0.00';
+    document.getElementById('bat-name-' + b).textContent = bat.name;
+    document.getElementById('bat-runs-' + b).textContent = bat.runs;
+    document.getElementById('bat-balls-' + b).textContent = bat.balls;
+    document.getElementById('bat-sr-' + b).textContent = sr;
+    const card = document.getElementById('bat-card-' + b);
+    card.classList.toggle('on-strike', i.striker === b);
+  }
+
+  // Over strip
+  const overNum = Math.floor(i.balls / 6) + 1;
+  document.getElementById('over-strip-label').textContent = 'Over ' + overNum + ':';
+  const ballsDiv = document.getElementById('over-balls');
+  ballsDiv.innerHTML = '';
+  i.currentOverBalls.forEach(chip => {
+    const el = document.createElement('div');
+    el.className = 'ball-chip ' + chip.cls;
+    el.textContent = chip.label;
+    ballsDiv.appendChild(el);
+  });
+
+  // Bowler bar
+  const bowler = i.bowlers[i.currentBowlerIdx];
+  document.getElementById('bowler-name-bar').textContent = bowler.name;
+  document.getElementById('bowler-over-label').textContent =
+    'Over ' + Math.floor(bowler.balls / 6) + '.' + (bowler.balls % 6);
+  document.getElementById('bowler-figures-bar').textContent = bowlerFig(bowler);
+
+  // Overs alert
+  const alert = document.getElementById('overs-alert');
+  if (maxOv !== 999 && i.balls >= maxOv * 6) {
+    alert.style.display = 'block';
+  } else {
+    alert.style.display = 'none';
+  }
+
+  // Check win condition in innings 2
+  if (state.innings === 2 && state.inn[0] && i.runs > state.inn[0].runs) {
+    setTimeout(() => endInnings(true), 300);
+  }
+}
+
+function ballsToOvers(balls) {
+  return Math.floor(balls / 6) + '.' + (balls % 6);
+}
+function bowlerFig(b) {
+  const overs = Math.floor(b.balls / 6) + '-' + (b.balls % 6);
+  return overs + '-' + b.runs + '-' + b.wickets;
+}
+
+// ─── SCORING ACTIONS ──────────────────────────────────────────────────────
+function saveHistory() {
+  const i = currentInnings();
+  const snap = JSON.stringify({
+    runs: i.runs, wickets: i.wickets, balls: i.balls,
+    batsmen: i.batsmen.map(b => ({...b})),
+    striker: i.striker,
+    bowlers: i.bowlers.map(b => ({...b})),
+    currentBowlerIdx: i.currentBowlerIdx,
+    currentOverBalls: [...i.currentOverBalls.map(c => ({...c}))]
+  });
+  i.history.push(snap);
+  if (i.history.length > 20) i.history.shift();
+}
+
+function scoreRuns(runs) {
+  saveHistory();
+  const i = currentInnings();
+  const bowler = i.bowlers[i.currentBowlerIdx];
+  i.runs += runs;
+  i.balls++;
+  i.batsmen[i.striker].runs += runs;
+  i.batsmen[i.striker].balls++;
+  if (runs === 4) i.batsmen[i.striker].fours++;
+  if (runs === 6) i.batsmen[i.striker].sixes++;
+  bowler.balls++;
+  bowler.runs += runs;
+
+  let cls = '';
+  if (runs === 4) cls = 'b4';
+  else if (runs === 6) cls = 'b6';
+  i.currentOverBalls.push({ label: String(runs), cls });
+
+  // Strike flip after odd runs
+  if (runs % 2 === 1) flipStrike();
+
+  // End of over
+  if (i.balls % 6 === 0) endOver();
+
+  renderScoring();
+}
+
+function scoreWide() {
+  saveHistory();
+  const i = currentInnings();
+  const bowler = i.bowlers[i.currentBowlerIdx];
+  i.runs += 1;
+  bowler.runs += 1;
+  i.currentOverBalls.push({ label: 'Wd', cls: 'Wd' });
+  renderScoring();
+}
+
+function scoreNoball() {
+  saveHistory();
+  const i = currentInnings();
+  const bowler = i.bowlers[i.currentBowlerIdx];
+  i.runs += 1;
+  bowler.runs += 1;
+  i.currentOverBalls.push({ label: 'Nb', cls: 'Nb' });
+  renderScoring();
+}
+
+function scoreDead() {
+  // no effect, just log
+  const i = currentInnings();
+  i.currentOverBalls.push({ label: 'Db', cls: '' });
+  renderScoring();
+}
+
+function flipStrike() {
+  const i = currentInnings();
+  i.striker = i.striker === 0 ? 1 : 0;
+}
+
+function endOver() {
+  const i = currentInnings();
+  i.currentOverBalls = [];
+  flipStrike(); // non-striker now on strike at start of next over
+}
+
+function undoLast() {
+  const i = currentInnings();
+  if (i.history.length === 0) return;
+  const prev = JSON.parse(i.history.pop());
+  i.runs = prev.runs; i.wickets = prev.wickets; i.balls = prev.balls;
+  i.batsmen = prev.batsmen; i.striker = prev.striker;
+  i.bowlers = prev.bowlers; i.currentBowlerIdx = prev.currentBowlerIdx;
+  i.currentOverBalls = prev.currentOverBalls;
+  renderScoring();
+}
+
+// ─── WICKET ───────────────────────────────────────────────────────────────
+let pendingDismissal = 'Bowled';
+
+function openWicketModal() {
+  pendingDismissal = 'Bowled';
+  document.querySelectorAll('.dismiss-option').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.dismiss-option')[0].classList.add('selected');
+  const i = currentInnings();
+  document.getElementById('wicket-bat0-btn').textContent = i.batsmen[0].name;
+  document.getElementById('wicket-bat1-btn').textContent = i.batsmen[1].name;
+  openModal('wicket-modal');
+}
+
+function selectDismissal(type) {
+  pendingDismissal = type;
+  document.querySelectorAll('.dismiss-option').forEach(b => {
+    b.classList.toggle('selected', b.textContent === type);
+  });
+}
+
+function confirmWicket(batIdx) {
+  saveHistory();
+  closeModal('wicket-modal');
+  const i = currentInnings();
+  const bowler = i.bowlers[i.currentBowlerIdx];
+  const bat = i.batsmen[batIdx];
+  bat.dismissed = true;
+  bat.dismissal = pendingDismissal;
+  bat.bowler = bowler.name;
+  i.wickets++;
+  i.balls++;
+  i.batsmen[batIdx].balls++;
+  bowler.balls++;
+  if (pendingDismissal !== 'Run Out') bowler.wickets++;
+
+  i.currentOverBalls.push({ label: 'W', cls: 'W' });
+
+  if (i.balls % 6 === 0) endOver();
+
+  const maxWickets = state.setup.teamSize - 1;
+  if (i.wickets >= maxWickets) {
+    setTimeout(() => endInnings(), 300);
+  } else {
+    // Ask for new batsman
+    openNewBatsmanModal(batIdx);
+  }
+  renderScoring();
+}
+
+// ─── NEW BATSMAN ───────────────────────────────────────────────────────────
+let newBatsmanForSlot = 0;
+
+function openNewBatsmanModal(outSlot) {
+  newBatsmanForSlot = outSlot;
+  const i = currentInnings();
+  // Show suggested positions
+  document.getElementById('newbat-pos0').textContent = i.striker === outSlot ? '★ Striker' : 'Striker';
+  document.getElementById('newbat-pos1').textContent = i.striker !== outSlot ? '★ Non-Striker' : 'Non-Striker';
+  document.getElementById('newbat-name-input').value = '';
+  openModal('newbat-modal');
+}
+
+function confirmNewBatsman(position) {
+  const name = document.getElementById('newbat-name-input').value.trim() || 'Batsman';
+  const i = currentInnings();
+  i.batsmen[newBatsmanForSlot] = {
+    name, runs: 0, balls: 0, fours: 0, sixes: 0, dismissed: false, dismissal: '', bowler: ''
+  };
+  i.striker = position;
+  closeModal('newbat-modal');
+  renderScoring();
+}
+
+// ─── BOWLER CHANGE ────────────────────────────────────────────────────────
+function openBowlerModal() {
+  const i = currentInnings();
+  const list = document.getElementById('bowler-list-existing');
+  list.innerHTML = '';
+  i.bowlers.forEach((b, idx) => {
+    const div = document.createElement('div');
+    div.className = 'bowler-item' + (idx === i.currentBowlerIdx ? ' current' : '');
+    div.innerHTML = `<div>
+      <div class="bowler-item-name">${b.name}</div>
+      <div class="bowler-item-figures">${bowlerFig(b)} • Econ: ${b.balls > 0 ? (b.runs / (b.balls/6)).toFixed(2) : '0.00'}</div>
+    </div><div style="color:var(--green);font-size:0.85rem;font-weight:800;">${idx === i.currentBowlerIdx ? 'BOWLING' : 'SELECT'}</div>`;
+    if (idx !== i.currentBowlerIdx) {
+      div.onclick = () => { i.currentBowlerIdx = idx; closeModal('bowler-modal'); renderScoring(); };
+    }
+    list.appendChild(div);
+  });
+  document.getElementById('new-bowler-input').value = '';
+  openModal('bowler-modal');
+}
+
+function addNewBowler() {
+  const name = document.getElementById('new-bowler-input').value.trim();
+  if (!name) return;
+  const i = currentInnings();
+  // Check if exists
+  const exists = i.bowlers.findIndex(b => b.name.toLowerCase() === name.toLowerCase());
+  if (exists >= 0) {
+    i.currentBowlerIdx = exists;
+  } else {
+    i.bowlers.push({ name, balls: 0, runs: 0, wickets: 0 });
+    i.currentBowlerIdx = i.bowlers.length - 1;
+  }
+  closeModal('bowler-modal');
+  renderScoring();
+}
+
+// ─── SUBSTITUTE ───────────────────────────────────────────────────────────
+let subOutIdx = -1, subNewPos = 0;
+
+function openSubModal() {
+  subOutIdx = -1;
+  const i = currentInnings();
+  const list = document.getElementById('sub-out-list');
+  list.innerHTML = '';
+  i.batsmen.forEach((b, idx) => {
+    const div = document.createElement('div');
+    div.className = 'sub-option' + (subOutIdx === idx ? ' selected' : '');
+    div.innerHTML = `<div class="sub-option-name">${b.name}</div>
+      <div class="sub-option-stats">${b.runs}(${b.balls}) ${b.dismissed ? '— DISMISSED' : '— BATTING'}</div>`;
+    div.onclick = () => {
+      subOutIdx = idx;
+      document.querySelectorAll('.sub-option').forEach((el, i2) => el.classList.toggle('selected', i2 === idx));
+    };
+    list.appendChild(div);
+  });
+  document.getElementById('sub-new-name').value = '';
+  openModal('sub-modal');
+}
+
+function selectSubPos(pos) { subNewPos = pos; }
+
+function confirmSub() {
+  if (subOutIdx < 0) { closeModal('sub-modal'); return; }
+  const name = document.getElementById('sub-new-name').value.trim() || 'Substitute';
+  const i = currentInnings();
+  // Store dismissed batsman info for summary if not already dismissed
+  i.batsmen[subOutIdx] = {
+    name, runs: 0, balls: 0, fours: 0, sixes: 0, dismissed: false, dismissal: '', bowler: ''
+  };
+  i.striker = subNewPos;
+  closeModal('sub-modal');
+  renderScoring();
+}
+
+// ─── END INNINGS ──────────────────────────────────────────────────────────
+let endInningsForced = false;
+
+function endInnings(auto) {
+  const i = currentInnings();
+  const msg = `${i.runs}/${i.wickets} in ${ballsToOvers(i.balls)} overs. Confirm end of innings?`;
+  document.getElementById('end-innings-msg').textContent = msg;
+  endInningsForced = !!auto;
+  if (auto) { doEndInnings(); return; }
+  openModal('end-innings-modal');
+}
+
+function doEndInnings() {
+  closeModal('end-innings-modal');
+  if (state.innings === 1) {
+    // Setup 2nd innings
+    const target = state.inn[0].runs + 1;
+    document.getElementById('target-info-modal').textContent =
+      '🎯 Target: ' + target + ' runs';
+    state.inn[1] = freshInningsState();
+    openModal('innings2-modal');
+  } else {
+    showFinalSummary();
+  }
+}
+
+function startSecondInnings() {
+  const bat1 = document.getElementById('inn2-bat1').value.trim() || 'Batsman 1';
+  const bat2 = document.getElementById('inn2-bat2').value.trim() || 'Batsman 2';
+  const bowler = document.getElementById('inn2-bowler').value.trim() || 'Bowler 1';
+  const i = state.inn[1];
+  i.batsmen[0].name = bat1;
+  i.batsmen[1].name = bat2;
+  i.bowlers = [{ name: bowler, balls: 0, runs: 0, wickets: 0 }];
+  i.currentBowlerIdx = 0;
+  i.striker = 0;
+  state.innings = 2;
+  closeModal('innings2-modal');
+  renderScoring();
+}
+
+// ─── END MATCH ────────────────────────────────────────────────────────────
+function confirmEndMatch() { openModal('end-match-modal'); }
+
+function doEndMatch() {
+  closeModal('end-match-modal');
+  showFinalSummary();
+}
+
+// ─── SUMMARY ──────────────────────────────────────────────────────────────
+function showFinalSummary() {
+  showScreen('summary-screen');
+  const s = state.setup;
+  let resultText = '';
+  const i1 = state.inn[0];
+  const i2 = state.inn[1];
+
+  if (i2) {
+    const maxWickets = s.teamSize - 1;
+    const target = i1.runs + 1;
+    if (i2.runs >= i1.runs) {
+      const wicketsLeft = maxWickets - i2.wickets;
+      resultText = s.teamBowl + ' won by ' + wicketsLeft + ' wicket(s)';
+    } else if (i2.wickets >= maxWickets || i2.balls >= s.maxOvers * 6) {
+      resultText = s.teamBat + ' won by ' + (i1.runs - i2.runs) + ' run(s)';
+    } else {
+      resultText = 'Match ended — ' + s.teamBat + ' ' + i1.runs + '/' + i1.wickets + ' vs ' + s.teamBowl + ' ' + i2.runs + '/' + i2.wickets;
+    }
+  } else {
+    resultText = '1st Innings ended — ' + s.teamBat + ' ' + i1.runs + '/' + i1.wickets;
+  }
+
+  document.getElementById('match-result-text').textContent = resultText;
+  document.getElementById('summary-content').innerHTML = buildSummaryHTML();
+}
+
+function buildSummaryHTML() {
+  const s = state.setup;
+  let html = '';
+  const innings = state.inn.filter(Boolean);
+  const teams = [s.teamBat, s.teamBowl];
+
+  innings.forEach((i, idx) => {
+    html += `<div class="innings-summary">
+      <div class="innings-title">${idx + 1 === 1 ? '1st' : '2nd'} Innings — ${teams[idx]}</div>
+      <div class="score-headline">${i.runs}/${i.wickets} <span style="font-size:1.1rem;color:var(--muted);">(${ballsToOvers(i.balls)} ov)</span></div>`;
+
+    // Batsmen table
+    html += `<table class="stat-table">
+      <thead><tr><th>Batsman</th><th>R</th><th>B</th><th>SR</th><th>4s</th><th>6s</th><th>Dismissal</th></tr></thead><tbody>`;
+    i.batsmen.forEach(b => {
+      const sr = b.balls > 0 ? (b.runs / b.balls * 100).toFixed(1) : '0.0';
+      const status = b.dismissed ? 'dismissed' : 'not-out';
+      const dismissInfo = b.dismissed ? (b.dismissal + (b.bowler ? ' b. ' + b.bowler : '')) : 'not out';
+      html += `<tr>
+        <td class="${status}">${b.name}</td>
+        <td>${b.runs}</td><td>${b.balls}</td><td>${sr}</td>
+        <td>${b.fours}</td><td>${b.sixes}</td>
+        <td style="font-size:0.75rem;color:var(--muted);">${dismissInfo}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+
+    // Bowlers table
+    html += `<table class="stat-table">
+      <thead><tr><th>Bowler</th><th>O</th><th>R</th><th>W</th><th>Econ</th></tr></thead><tbody>`;
+    i.bowlers.forEach(b => {
+      const overs = Math.floor(b.balls / 6) + '.' + (b.balls % 6);
+      const econ = b.balls > 0 ? (b.runs / (b.balls / 6)).toFixed(2) : '0.00';
+      html += `<tr><td>${b.name}</td><td>${overs}</td><td>${b.runs}</td><td>${b.wickets}</td><td>${econ}</td></tr>`;
+    });
+    html += '</tbody></table></div>';
+  });
+  return html;
+}
+
+// ─── MODAL HELPERS ────────────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ─── SCREEN SWITCH ────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function resetAll() {
+  init();
+  // Reset setup fields
+  document.getElementById('team-bat').value = '';
+  document.getElementById('team-bowl').value = '';
+  document.getElementById('bat1-name').value = '';
+  document.getElementById('bat2-name').value = '';
+  document.getElementById('bowler1-name').value = '';
+  document.getElementById('team-size').value = '';
+  document.getElementById('match-date').value = new Date().toISOString().split('T')[0];
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.type-btn')[1].classList.add('selected');
+  document.getElementById('custom-overs-field').style.display = 'none';
+  showScreen('setup-screen');
+}
+</script>
+</body>
+</html>
