@@ -1156,7 +1156,8 @@ function flipStrike() {
 function endOver() {
   const i = currentInnings();
   i.currentOverBalls = [];
-  flipStrike(); // non-striker now on strike at start of next over
+  flipStrike();
+  setTimeout(() => openBowlerModal(true), 300);
 }
 
 function undoLast() {
@@ -1244,18 +1245,26 @@ function confirmNewBatsman(position) {
 }
 
 // ─── BOWLER CHANGE ────────────────────────────────────────────────────────
-function openBowlerModal() {
+function openBowlerModal(endOfOver) {
   const i = currentInnings();
+  // Update modal header
+  document.querySelector('#bowler-modal .modal-header').textContent =
+    endOfOver ? '🔄 OVER DONE — SELECT NEXT BOWLER' : '🔄 CHANGE BOWLER';
   const list = document.getElementById('bowler-list-existing');
   list.innerHTML = '';
   i.bowlers.forEach((b, idx) => {
+    const isCurrent = idx === i.currentBowlerIdx;
     const div = document.createElement('div');
-    div.className = 'bowler-item' + (idx === i.currentBowlerIdx ? ' current' : '');
+    div.className = 'bowler-item' + (isCurrent ? ' current' : '');
+    // At end of over, current bowler is blocked (can't bowl consecutive overs)
+    const blocked = endOfOver && isCurrent;
     div.innerHTML = `<div>
-      <div class="bowler-item-name">${b.name}</div>
+      <div class="bowler-item-name" style="${blocked ? 'color:var(--muted)' : ''}">${b.name}</div>
       <div class="bowler-item-figures">${bowlerFig(b)} • Econ: ${b.balls > 0 ? (b.runs / (b.balls/6)).toFixed(2) : '0.00'}</div>
-    </div><div style="color:var(--green);font-size:0.85rem;font-weight:800;">${idx === i.currentBowlerIdx ? 'BOWLING' : 'SELECT'}</div>`;
-    if (idx !== i.currentBowlerIdx) {
+    </div><div style="font-size:0.85rem;font-weight:800;color:${blocked ? 'var(--red)' : isCurrent ? 'var(--blue)' : 'var(--green)'}">
+      ${blocked ? 'PREV OVER' : isCurrent ? 'BOWLING' : 'SELECT'}
+    </div>`;
+    if (!isCurrent) {
       div.onclick = () => { i.currentBowlerIdx = idx; closeModal('bowler-modal'); renderScoring(); };
     }
     list.appendChild(div);
